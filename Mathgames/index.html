@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pico Fermi Bagels - 數字偵探</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --danger: #95a5a6;
+            --bg: #f4f7f6;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .lang-switch {
+            margin-bottom: 1rem;
+            text-align: right;
+        }
+
+        button.small {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border: 1px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            border-radius: 5px;
+        }
+
+        button.small:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        h1 { color: var(--primary); margin-bottom: 0.5rem; }
+        p.desc { font-size: 0.9rem; color: #7f8c8d; margin-bottom: 1.5rem; }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            width: 150px;
+            padding: 12px;
+            font-size: 1.2rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            letter-spacing: 5px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button.main {
+            padding: 12px 25px;
+            font-size: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        button.main:active { transform: scale(0.95); }
+
+        .history {
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .history h3 { border-bottom: 2px solid var(--bg); padding-bottom: 5px; }
+
+        .log-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } }
+
+        .tags { display: flex; gap: 5px; }
+        .tag {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+        .tag-f { background: var(--success); }
+        .tag-p { background: var(--warning); color: #333; }
+        .tag-b { background: var(--danger); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+            z-index: 100;
+            text-align: center;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+
+        .rules {
+            background: #eef7ff;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="lang-switch">
+            <button class="small" onclick="switchLang('zh')">中文</button>
+            <button class="small" onclick="switchLang('en')">English</button>
+        </div>
+
+        <h1 id="title">數字偵探</h1>
+        <p class="desc" id="subtitle">猜出 3 個不重複的數字 (0-9)</p>
+
+        <div class="rules" id="rules">
+            <b>Fermi:</b> 數字對且位置對<br>
+            <b>Pico:</b> 數字對但位置錯<br>
+            <b>Bagels:</b> 全錯
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="guessInput" maxlength="3" placeholder="???" autocomplete="off">
+            <button class="main" onclick="makeGuess()" id="btnGuess">猜題</button>
+        </div>
+
+        <div class="history">
+            <h3 id="historyTitle">推理紀錄</h3>
+            <div id="logList"></div>
+        </div>
+
+        <button class="small" onclick="initGame()" id="btnReset" style="margin-top: 20px;">重新開始</button>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="modal" id="winModal">
+        <h2 id="winTitle">恭喜你！</h2>
+        <p id="winMsg">你成功找出了數字！</p>
+        <button class="main" onclick="initGame()">再玩一次</button>
+    </div>
+
+    <script>
+        let secret = [];
+        let lang = 'zh';
+
+        const text = {
+            zh: {
+                title: "數字偵探 PFB",
+                subtitle: "猜出 3 個不重複的數字 (0-9)",
+                rules: "<b>Fermi:</b> 數字對且位置對<br><b>Pico:</b> 數字對但位置錯<br><b>Bagels:</b> 全錯",
+                btnGuess: "猜題",
+                btnReset: "重新開始",
+                historyTitle: "推理紀錄",
+                invalid: "請輸入 3 個不重複的數字！",
+                winTitle: "成功！🎯",
+                winMsg: "你真的很有邏輯！正確答案是: ",
+                again: "再玩一次"
+            },
+            en: {
+                title: "Pico Fermi Bagels",
+                subtitle: "Guess the 3 unique digits (0-9)",
+                rules: "<b>Fermi:</b> Correct digit & position<br><b>Pico:</b> Correct digit, wrong position<br><b>Bagels:</b> All wrong",
+                btnGuess: "Guess",
+                btnReset: "Reset Game",
+                historyTitle: "Inference Log",
+                invalid: "Please enter 3 unique digits!",
+                winTitle: "You Win! 🎯",
+                winMsg: "Brilliant logic! The secret was: ",
+                again: "Play Again"
+            }
+        };
+
+        function switchLang(l) {
+            lang = l;
+            document.getElementById('title').innerText = text[lang].title;
+            document.getElementById('subtitle').innerText = text[lang].subtitle;
+            document.getElementById('rules').innerHTML = text[lang].rules;
+            document.getElementById('btnGuess').innerText = text[lang].btnGuess;
+            document.getElementById('btnReset').innerText = text[lang].btnReset;
+            document.getElementById('historyTitle').innerText = text[lang].historyTitle;
+        }
+
+        function initGame() {
+            // 生成不重複的三位數
+            let nums = [0,1,2,3,4,5,6,7,8,9];
+            nums.sort(() => Math.random() - 0.5);
+            secret = nums.slice(0, 3);
+            
+            // 重置介面
+            document.getElementById('logList').innerHTML = '';
+            document.getElementById('guessInput').value = '';
+            document.getElementById('winModal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+            console.log("Secret:", secret.join('')); // 調試用
+        }
+
+        function makeGuess() {
+            const input = document.getElementById('guessInput').value;
+            
+            // 驗證輸入：必須是 3 位數且不重複
+            if (input.length !== 3 || isNaN(input) || new Set(input).size !== 3) {
+                alert(text[lang].invalid);
+                return;
+            }
+
+            const guessArr = input.split('').map(Number);
+            let f = 0;
+            let p = 0;
+
+            for (let i = 0; i < 3; i++) {
+                if (guessArr[i] === secret[i]) {
+                    f++;
+                } else if (secret.includes(guessArr[i])) {
+                    p++;
+                }
+            }
+
+            addLog(input, f, p);
+            document.getElementById('guessInput').value = '';
+
+            if (f === 3) {
+                showWin();
+            }
+        }
+
+        function addLog(guess, f, p) {
+            const list = document.getElementById('logList');
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            
+            let tagsHtml = '';
+            if (f === 0 && p === 0) {
+                tagsHtml = `<span class="tag tag-b">Bagels</span>`;
+            } else {
+                for(let i=0; i<f; i++) tagsHtml += `<span class="tag tag-f">Fermi</span>`;
+                for(let i=0; i<p; i++) tagsHtml += `<span class="tag tag-p">Pico</span>`;
+            }
+
+            item.innerHTML = `<strong>${guess}</strong> <div class="tags">${tagsHtml}</div>`;
+            list.prepend(item);
+        }
+
+        function showWin() {
+            document.getElementById('winTitle').innerText = text[lang].winTitle;
+            document.getElementById('winMsg').innerText = text[lang].winMsg + secret.join('');
+            document.getElementById('winModal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        // 初始化
+        initGame();
+        switchLang('zh');
+
+        // 支援 Enter 鍵
+        document.getElementById('guessInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') makeGuess();
+        });
+    </script>
+</body>
+</html>
