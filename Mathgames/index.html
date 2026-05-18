@@ -2,306 +2,946 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PFB 數字偵探遊戲</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PFB 數字偵探遊戲 | PFB Detective</title>
     <style>
         :root {
             --primary: #4a90e2;
+            --primary-dark: #357abd;
             --secondary: #67b26f;
             --success: #2ecc71;
             --warning: #f1c40f;
             --danger: #e74c3c;
             --grey: #95a5a6;
-            --bg: #f8f9fa;
+            --dark-grey: #2c3e50;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --bg-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            --shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        /* 簡單好懂的重設與自適應排版 */
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         body {
-            font-family: 'PingFang HK', 'Microsoft JhengHei', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang HK', 'Microsoft JhengHei', sans-serif;
+            background: var(--bg-gradient);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            padding: 10px;
+            color: #333;
+            overflow-x: hidden;
         }
 
         .game-card {
-            background: white;
-            width: 90%;
-            max-width: 450px;
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            padding: 1.5rem;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
             text-align: center;
-        }
-
-        .lang-bar { text-align: right; margin-bottom: 10px; }
-        .btn-link { 
-            background: none; border: none; color: var(--primary); 
-            cursor: pointer; text-decoration: underline; font-size: 0.9rem;
-        }
-
-        h1 { color: var(--primary); margin: 10px 0; font-size: 1.8rem; }
-        .stats { font-weight: bold; color: var(--grey); margin-bottom: 15px; }
-
-        .rules-box {
-            background: #f0f7ff;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            text-align: left;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-
-        .input-area {
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
         }
 
-        input {
-            flex: 1;
-            padding: 12px;
-            font-size: 1.3rem;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            text-align: center;
-            letter-spacing: 8px;
-            font-weight: bold;
+        /* 頂部語言與音效列 */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
         }
 
-        input:focus { border-color: var(--primary); outline: none; }
+        .lang-bar {
+            display: flex;
+            gap: 8px;
+        }
 
-        button {
-            padding: 12px 20px;
+        .btn-link { 
+            background: none;
             border: none;
-            border-radius: 10px;
+            color: var(--primary); 
             cursor: pointer;
             font-weight: bold;
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            border-radius: 6px;
             transition: all 0.2s;
         }
 
-        .btn-guess { background: var(--primary); color: white; }
-        .btn-guess:hover { background: #357abd; }
+        .btn-link:hover, .btn-link.active {
+            background: rgba(74, 144, 226, 0.1);
+        }
 
+        .sound-toggle {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* 標題與數據 */
+        h1 {
+            color: var(--dark-grey);
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .stats {
+            font-weight: bold;
+            color: var(--grey);
+            font-size: 0.95rem;
+            background: rgba(0,0,0,0.04);
+            padding: 6px 12px;
+            border-radius: 30px;
+            align-self: center;
+            display: flex;
+            gap: 6px;
+        }
+
+        /* 規則說明方框 */
+        .rules-box {
+            background: #f0f7ff;
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            text-align: left;
+            line-height: 1.6;
+            border-left: 4px solid var(--primary);
+        }
+
+        .rules-title {
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 4px;
+        }
+
+        /* 解碼密碼顯示槽 */
+        .code-display {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 10px 0;
+        }
+
+        .code-slot {
+            width: 50px;
+            height: 55px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            color: var(--dark-grey);
+            transition: all 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .code-slot.filled {
+            border-color: var(--primary);
+            box-shadow: 0 0 8px rgba(74, 144, 226, 0.3);
+            transform: scale(1.05);
+        }
+
+        /* 操作控制區 */
+        .control-area {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .btn-guess {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 6px rgba(74, 144, 226, 0.2);
+        }
+
+        .btn-guess:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-guess:disabled {
+            background: var(--grey);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* 自定義觸控虛擬數字鍵盤 */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            background: rgba(0,0,0,0.03);
+            padding: 10px;
+            border-radius: 16px;
+        }
+
+        .num-btn {
+            background: white;
+            color: var(--dark-grey);
+            font-size: 1.2rem;
+            font-weight: bold;
+            aspect-ratio: 1;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .num-btn:hover:not(:disabled) {
+            background: #f0f7ff;
+        }
+
+        .num-btn:disabled {
+            background: #e9ecef;
+            color: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .num-btn.btn-action {
+            background: #f8d7da;
+            color: var(--danger);
+        }
+        .num-btn.btn-action:hover {
+            background: #f5c2c7;
+        }
+
+        /* 歷史猜測列表 */
         .history-container {
-            max-height: 300px;
+            max-height: 180px;
             overflow-y: auto;
-            margin-top: 15px;
-            border-top: 2px solid #eee;
-            padding-top: 10px;
+            margin-top: 5px;
+            border-radius: 12px;
+            border: 1px solid #eee;
+            background: #fafafa;
+            padding: 5px;
         }
 
         .history-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 5px;
+            padding: 8px 12px;
             border-bottom: 1px solid #f0f0f0;
+            animation: slideIn 0.2s ease-out;
         }
 
-        .tag-group { display: flex; gap: 4px; }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-num {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--dark-grey);
+            letter-spacing: 2px;
+        }
+
+        .tag-group {
+            display: flex;
+            gap: 4px;
+        }
+
         .tag {
-            padding: 3px 8px;
-            border-radius: 5px;
+            padding: 4px 8px;
+            border-radius: 6px;
             font-size: 0.75rem;
             color: white;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 3px;
         }
         .tag-f { background: var(--success); }
         .tag-p { background: var(--warning); color: #333; }
         .tag-b { background: var(--grey); }
 
-        /* 彈窗設計 */
+        /* 底部副操作鍵 */
+        .footer-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 5px;
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: var(--dark-grey);
+        }
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn-danger-outline {
+            background: none;
+            color: var(--danger);
+            border: 1.5px solid var(--danger);
+        }
+        .btn-danger-outline:hover {
+            background: rgba(231, 76, 60, 0.05);
+        }
+
+        /* 自定義通知吐司 (Toast) */
+        .toast-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(231, 76, 60, 0.95);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            white-space: nowrap;
+        }
+
+        .toast-container.show {
+            opacity: 1;
+            transform: translate(-50%, -5px);
+        }
+
+        /* 彈窗遮罩與對話框 (Modal) */
         .modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(3px);
-            z-index: 99;
+            backdrop-filter: blur(5px);
+            z-index: 999;
+            animation: fadeIn 0.2s ease-out;
         }
+
         .modal {
             display: none;
             position: fixed;
             top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%) scale(0.9);
             background: white;
-            padding: 30px;
+            padding: 24px;
             border-radius: 20px;
-            z-index: 100;
-            width: 80%;
-            max-width: 300px;
+            z-index: 1000;
+            width: 90%;
+            max-width: 350px;
             text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: modalPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        .footer-btns {
-            margin-top: 20px;
+        .modal h2 {
+            margin-top: 0;
+            color: var(--dark-grey);
+            font-size: 1.5rem;
+        }
+
+        .modal p {
+            color: #555;
+            line-height: 1.5;
+            margin: 15px 0 20px;
+            font-size: 1.05rem;
+        }
+
+        .modal-secret {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 5px;
+            color: var(--primary);
+            background: #f0f7ff;
+            padding: 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .modal-buttons {
             display: flex;
+            gap: 12px;
             justify-content: center;
-            gap: 15px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+        }
+
+        /* 動畫效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes modalPop {
+            to { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* 滾動條美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.02);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.15);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.25);
         }
     </style>
 </head>
 <body>
 
 <div class="game-card">
-    <div class="lang-bar">
-        <button class="btn-link" onclick="setLang('zh')">中文</button> | 
-        <button class="btn-link" onclick="setLang('en')">EN</button>
-    </div>
+    <!-- 自訂錯誤通知 -->
+    <div class="toast-container" id="toast">請輸入3個不重複的數字！</div>
 
-    <h1 id="ui-title">數字偵探 PFB</h1>
-    <div class="stats"><span id="ui-attempts">步數</span>: <span id="count">0</span></div>
-
-    <div class="rules-box" id="ui-rules">
-        🎯 <b>Fermi</b>: 數字對、位置對<br>
-        💡 <b>Pico</b>: 數字對、位置錯<br>
-        🥯 <b>Bagels</b>: 全錯
-    </div>
-
-    <div class="input-area">
-        <input type="text" id="guessInput" maxlength="3" placeholder="???" autocomplete="off">
-        <button class="btn-guess" onclick="makeGuess()" id="ui-btn-guess">猜題</button>
-    </div>
-
-    <div class="history-container" id="history">
+    <!-- 頂部控制列 -->
+    <div class="top-bar">
+        <div class="lang-bar">
+            <button class="btn-link active" id="btn-lang-zh" onclick="setLang('zh')">繁中</button>
+            <span style="color: #ccc; align-self: center;">|</span>
+            <button class="btn-link" id="btn-lang-en" onclick="setLang('en')">EN</button>
         </div>
+        <button class="sound-toggle" onclick="toggleSound()" id="sound-btn" title="切換音效">🔊</button>
+    </div>
 
+    <!-- 標題與步數 -->
+    <h1 id="ui-title">🕵️‍♂️ 數字偵探 PFB</h1>
+    <div class="stats">
+        <span id="ui-attempts">猜題次數</span>: <span id="count" style="color: var(--primary);">0</span>
+    </div>
+
+    <!-- 規則說明 -->
+    <div class="rules-box" id="ui-rules-container">
+        <div class="rules-title" id="ui-rules-title">💡 偵探線索解析：</div>
+        <div id="ui-rules">
+            🎯 <b>Fermi</b>: 數字對、位置對<br>
+            💡 <b>Pico</b>: 數字對、位置錯<br>
+            🥯 <b>Bagels</b>: 全錯
+        </div>
+    </div>
+
+    <!-- 解碼槽顯示 -->
+    <div class="code-display">
+        <div class="code-slot" id="slot-0">-</div>
+        <div class="code-slot" id="slot-1">-</div>
+        <div class="code-slot" id="slot-2">-</div>
+    </div>
+
+    <!-- 提交按鈕與控制 -->
+    <button class="btn-guess" onclick="makeGuess()" id="ui-btn-guess" disabled style="width: 100%;">
+        🔍 提交猜測 (Guess)
+    </button>
+
+    <!-- 虛擬自製觸控鍵盤 -->
+    <div class="numpad">
+        <button class="num-btn" onclick="pressNum(1)">1</button>
+        <button class="num-btn" onclick="pressNum(2)">2</button>
+        <button class="num-btn" onclick="pressNum(3)">3</button>
+        <button class="num-btn" onclick="pressNum(4)">4</button>
+        <button class="num-btn" onclick="pressNum(5)">5</button>
+        <button class="num-btn" onclick="pressNum(6)">6</button>
+        <button class="num-btn" onclick="pressNum(7)">7</button>
+        <button class="num-btn" onclick="pressNum(8)">8</button>
+        <button class="num-btn" onclick="pressNum(9)">9</button>
+        <button class="num-btn" onclick="pressNum(0)">0</button>
+        <button class="num-btn btn-action" onclick="pressDelete()" style="grid-column: span 5; aspect-ratio: auto; font-size: 1rem; padding: 6px;" id="ui-btn-del">
+            ⌫ 刪除 (Delete)
+        </button>
+    </div>
+
+    <!-- 歷史歷史紀錄 -->
+    <div class="history-container" id="history"></div>
+
+    <!-- 底部操作列 -->
     <div class="footer-btns">
-        <button onclick="confirmReset()" style="background:#eee;" id="ui-btn-reset">重新開始</button>
-        <button onclick="giveUp()" style="background:none; color:var(--danger); border:1px solid var(--danger);" id="ui-btn-giveup">放棄</button>
+        <button class="btn-secondary" onclick="requestReset()" id="ui-btn-reset">🔄 重玩</button>
+        <button class="btn-danger-outline" onclick="requestGiveUp()" id="ui-btn-giveup">🏳️ 放棄</button>
     </div>
 </div>
 
-<div class="modal-overlay" id="overlay"></div>
-<div class="modal" id="modal">
-    <h2 id="modal-title">太棒了！</h2>
-    <p id="modal-content"></p>
-    <button class="btn-guess" onclick="initGame()" style="width:100%">再挑戰一次</button>
+<!-- 自訂對話框結構 (用於 取消、確認、答案顯示) -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeConfirmModal()"></div>
+
+<!-- 1. 結果/宣布答案 彈窗 -->
+<div class="modal" id="end-modal">
+    <h2 id="end-modal-title">成功解碼！</h2>
+    <p id="end-modal-content">你一共花了 0 步。正確答案是：</p>
+    <div id="end-modal-secret-box" class="modal-secret">???</div>
+    <div style="margin-top: 24px;">
+        <button class="btn-guess" onclick="initGame()" style="width:100%" id="ui-btn-restart">再挑戰一次</button>
+    </div>
+</div>
+
+<!-- 2. 二次確認 彈窗 (代替原生的 confirm) -->
+<div class="modal" id="confirm-modal">
+    <h2 id="confirm-modal-title">確定重玩？</h2>
+    <p id="confirm-modal-content">你當前的解碼進度將會丟失。</p>
+    <div class="modal-buttons">
+        <button class="btn-secondary" onclick="closeConfirmModal()" id="ui-btn-cancel">取消</button>
+        <button class="btn-guess" id="confirm-yes-btn" style="background: var(--danger);">確定</button>
+    </div>
 </div>
 
 <script>
+    // 遊戲核心數據
     let secret = [];
+    let currentGuess = [];
     let attempts = 0;
     let currentLang = 'zh';
+    let soundEnabled = true;
 
+    // 音效合成系統 (Web Audio API)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(type) {
+        if (!soundEnabled) return;
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'delete') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'tag') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'win') {
+                // 勝利和弦
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                    g.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.4);
+                    o.start(audioCtx.currentTime + i * 0.1);
+                    o.stop(audioCtx.currentTime + i * 0.1 + 0.4);
+                });
+            }
+        } catch (e) {
+            console.log("Audio play blocked/unsupported:", e);
+        }
+    }
+
+    // 雙語翻譯字典
     const langData = {
         zh: {
-            title: "數字偵探 PFB",
+            title: "🕵️‍♂️ 數字偵探 PFB",
             attempts: "猜題次數",
+            rulesTitle: "💡 偵探線索解析：",
             rules: "🎯 <b>Fermi</b>: 數字對、位置對<br>💡 <b>Pico</b>: 數字對、位置錯<br>🥯 <b>Bagels</b>: 全錯",
-            btnGuess: "猜題",
-            btnReset: "重玩",
-            btnGiveUp: "看答案",
-            error: "請輸入 3 個不重複的數字！",
-            winTitle: "成功解碼！",
-            winMsg: "你一共花了 {n} 步。正確答案是：",
-            giveUpMsg: "別灰心，正確答案是：",
-            confirmReset: "確定要重新開始嗎？"
+            btnGuess: "🔍 提交猜測",
+            btnReset: "🔄 重玩",
+            btnGiveUp: "🏳️ 放棄",
+            btnDel: "⌫ 刪除 (Delete)",
+            errorDuplicate: "請輸入 3 個「不重複」的數字！",
+            errorIncomplete: "請輸入完整 3 位數字！",
+            winTitle: "🎉 成功解碼！",
+            winMsg: "幹得好，偵探！你一共花了 {n} 步破解線索。正確密碼是：",
+            giveUpTitle: "💼 偵探撤退",
+            giveUpMsg: "別灰心！正確的保險箱密碼是：",
+            confirmResetTitle: "🔄 確定要重新開始？",
+            confirmResetMsg: "你當前的解碼進度與次數將會全部重設。",
+            confirmGiveUpTitle: "🏳️ 確定要放棄並看答案嗎？",
+            confirmGiveUpMsg: "放棄後將會向你展示終極正確解碼。",
+            btnRestart: "再挑戰一次 🎮",
+            btnCancel: "取消",
+            btnConfirm: "確定"
         },
         en: {
-            title: "PFB Detective",
+            title: "🕵️‍♂️ PFB Detective",
             attempts: "Guesses",
+            rulesTitle: "💡 Detective Clues Guide:",
             rules: "🎯 <b>Fermi</b>: Correct digit & spot<br>💡 <b>Pico</b>: Correct digit, wrong spot<br>🥯 <b>Bagels</b>: All wrong",
-            btnGuess: "Guess",
-            btnReset: "Reset",
-            btnGiveUp: "Reveal",
-            error: "Enter 3 unique digits!",
-            winTitle: "Mission Success!",
-            winMsg: "You solved it in {n} steps. The answer was: ",
-            giveUpMsg: "The secret code was: ",
-            confirmReset: "Are you sure to reset?"
+            btnGuess: "🔍 Submit Guess",
+            btnReset: "🔄 Reset",
+            btnGiveUp: "🏳️ Give Up",
+            btnDel: "⌫ Delete",
+            errorDuplicate: "Enter 3 \"unique\" digits!",
+            errorIncomplete: "Please fill in all 3 digits!",
+            winTitle: "🎉 Mission Success!",
+            winMsg: "Great job, Detective! You cracked the case in {n} steps. The secret code was:",
+            giveUpTitle: "💼 Case Closed",
+            giveUpMsg: "Never mind! The correct combination was:",
+            confirmResetTitle: "🔄 Start New Game?",
+            confirmResetMsg: "Your current progress and attempt count will be completely reset.",
+            confirmGiveUpTitle: "🏳️ Give up and reveal code?",
+            confirmGiveUpMsg: "This will show you the exact answer and end the current round.",
+            btnRestart: "Play Again 🎮",
+            btnCancel: "Cancel",
+            btnConfirm: "Confirm"
         }
     };
 
-    function setLang(l) {
-        currentLang = l;
-        const d = langData[l];
+    // 切換語系
+    function setLang(lang) {
+        currentLang = lang;
+        const d = langData[lang];
+        
+        // 更新主要介面
         document.getElementById('ui-title').innerText = d.title;
         document.getElementById('ui-attempts').innerText = d.attempts;
+        document.getElementById('ui-rules-title').innerText = d.rulesTitle;
         document.getElementById('ui-rules').innerHTML = d.rules;
         document.getElementById('ui-btn-guess').innerText = d.btnGuess;
         document.getElementById('ui-btn-reset').innerText = d.btnReset;
         document.getElementById('ui-btn-giveup').innerText = d.btnGiveUp;
+        document.getElementById('ui-btn-del').innerText = d.btnDel;
+        document.getElementById('ui-btn-restart').innerText = d.btnRestart;
+
+        // 更新按鈕高亮狀態
+        document.getElementById('btn-lang-zh').classList.toggle('active', lang === 'zh');
+        document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
+        
+        // 重新繪製歷史紀錄（如果有猜測）
+        refreshHistoryUI();
     }
 
+    // 開關音效
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        document.getElementById('sound-btn').innerText = soundEnabled ? '🔊' : '🔇';
+    }
+
+    // 自訂錯誤通知（取代 Alert）
+    function showToast(msgKey) {
+        playSound('error');
+        const toast = document.getElementById('toast');
+        toast.innerText = langData[currentLang][msgKey] || msgKey;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2200);
+    }
+
+    // 打開一般提示/結束彈窗
+    function showEndModal(title, msg, secretStr) {
+        document.getElementById('end-modal-title').innerText = title;
+        document.getElementById('end-modal-content').innerText = msg;
+        document.getElementById('end-modal-secret-box').innerText = secretStr;
+
+        document.getElementById('modal-overlay').style.display = 'block';
+        document.getElementById('end-modal').style.display = 'block';
+    }
+
+    // 關閉對話框
+    function closeConfirmModal() {
+        document.getElementById('modal-overlay').style.display = 'none';
+        document.getElementById('end-modal').style.display = 'none';
+        document.getElementById('confirm-modal').style.display = 'none';
+    }
+
+    // 代替 Confirm 的自訂確認框
+    function showConfirmModal(titleKey, msgKey, onConfirm) {
+        playSound('click');
+        const d = langData[currentLang];
+        document.getElementById('confirm-modal-title').innerText = d[titleKey];
+        document.getElementById('confirm-modal-content').innerText = d[msgKey];
+        
+        const yesBtn = document.getElementById('confirm-yes-btn');
+        yesBtn.innerText = d.btnConfirm;
+        document.getElementById('ui-btn-cancel').innerText = d.btnCancel;
+
+        // 綁定單次點擊事件
+        yesBtn.onclick = () => {
+            playSound('click');
+            closeConfirmModal();
+            onConfirm();
+        };
+
+        document.getElementById('modal-overlay').style.display = 'block';
+        document.getElementById('confirm-modal').style.display = 'block';
+    }
+
+    // 初始化/重新開始遊戲
     function initGame() {
+        playSound('click');
+        // 隨機選取 3 個不重複的數字
         let digits = [0,1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
         secret = digits.slice(0, 3);
+        
         attempts = 0;
+        currentGuess = [];
+        
         document.getElementById('count').innerText = "0";
         document.getElementById('history').innerHTML = "";
-        document.getElementById('guessInput').value = "";
-        document.getElementById('modal').style.display = "none";
-        document.getElementById('overlay').style.display = "none";
-        document.getElementById('guessInput').focus();
+        
+        closeConfirmModal();
+        updateSlotsUI();
+        enableAllNumKeys();
+        
+        // 滾動回到頂部
+        document.getElementById('history').scrollTop = 0;
     }
 
+    // 更新槽位 UI
+    function updateSlotsUI() {
+        for (let i = 0; i < 3; i++) {
+            const slot = document.getElementById(`slot-${i}`);
+            if (currentGuess[i] !== undefined) {
+                slot.innerText = currentGuess[i];
+                slot.classList.add('filled');
+            } else {
+                slot.innerText = "-";
+                slot.classList.remove('filled');
+            }
+        }
+        
+        // 如果輸入滿 3 位，啟用提交按鈕
+        const btnGuess = document.getElementById('ui-btn-guess');
+        if (currentGuess.length === 3) {
+            btnGuess.removeAttribute('disabled');
+        } else {
+            btnGuess.setAttribute('disabled', 'true');
+        }
+    }
+
+    // 禁用/啟用虛擬鍵盤按鈕（防止重複輸入相同數字）
+    function updateNumpadStates() {
+        const buttons = document.querySelectorAll('.num-btn:not(.btn-action)');
+        buttons.forEach(btn => {
+            const val = parseInt(btn.innerText);
+            if (currentGuess.includes(val)) {
+                btn.setAttribute('disabled', 'true');
+            } else {
+                btn.removeAttribute('disabled');
+            }
+        });
+    }
+
+    function enableAllNumKeys() {
+        const buttons = document.querySelectorAll('.num-btn:not(.btn-action)');
+        buttons.forEach(btn => btn.removeAttribute('disabled'));
+    }
+
+    // 按下數字
+    function pressNum(num) {
+        if (currentGuess.length >= 3) return;
+        if (currentGuess.includes(num)) {
+            showToast('errorDuplicate');
+            return;
+        }
+        playSound('click');
+        currentGuess.push(num);
+        updateSlotsUI();
+        updateNumpadStates();
+    }
+
+    // 按下刪除
+    function pressDelete() {
+        if (currentGuess.length === 0) return;
+        playSound('delete');
+        currentGuess.pop();
+        updateSlotsUI();
+        updateNumpadStates();
+    }
+
+    // 用鍵盤實體輸入監聽
+    document.addEventListener('keydown', (e) => {
+        // 如果彈出視窗開著，不接收輸入
+        if (document.getElementById('modal-overlay').style.display === 'block') {
+            if (e.key === 'Enter') {
+                // 如果是結束視窗，按 Enter 可以重玩
+                if (document.getElementById('end-modal').style.display === 'block') {
+                    initGame();
+                }
+            }
+            return;
+        }
+
+        if (e.key >= '0' && e.key <= '9') {
+            pressNum(parseInt(e.key));
+        } else if (e.key === 'Backspace' || e.key === 'Delete') {
+            pressDelete();
+        } else if (e.key === 'Enter') {
+            if (currentGuess.length === 3) {
+                makeGuess();
+            } else {
+                showToast('errorIncomplete');
+            }
+        }
+    });
+
+    // 歷史猜測數據陣列，便於多語系動態刷新
+    let guessHistoryData = [];
+
+    // 提交猜題
     function makeGuess() {
-        const val = document.getElementById('guessInput').value;
-        if (val.length !== 3 || new Set(val).size !== 3 || isNaN(val)) {
-            alert(langData[currentLang].error);
+        if (currentGuess.length !== 3) {
+            showToast('errorIncomplete');
             return;
         }
 
         attempts++;
         document.getElementById('count').innerText = attempts;
-        
-        const guess = val.split('').map(Number);
-        let f = 0, p = 0;
 
-        guess.forEach((num, i) => {
-            if (num === secret[i]) f++;
-            else if (secret.includes(num)) p++;
+        let f = 0;
+        let p = 0;
+
+        currentGuess.forEach((num, i) => {
+            if (num === secret[i]) {
+                f++;
+            } else if (secret.includes(num)) {
+                p++;
+            }
         });
 
-        updateHistory(val, f, p);
-        document.getElementById('guessInput').value = "";
-        document.getElementById('guessInput').focus();
+        // 存入歷史數據
+        guessHistoryData.unshift({
+            attemptNum: attempts,
+            guessStr: currentGuess.join(''),
+            f: f,
+            p: p
+        });
 
-        if (f === 3) showEnd(langData[currentLang].winTitle, langData[currentLang].winMsg.replace('{n}', attempts));
-    }
+        playSound('tag');
+        refreshHistoryUI();
 
-    function updateHistory(guess, f, p) {
-        const container = document.getElementById('history');
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        
-        let tags = "";
-        if (f === 0 && p === 0) tags = '<span class="tag tag-b">Bagels</span>';
-        else {
-            for(let i=0; i<f; i++) tags += '<span class="tag tag-f">Fermi</span>';
-            for(let i=0; i<p; i++) tags += '<span class="tag tag-p">Pico</span>';
+        // 判斷是否全對（Fermi = 3）
+        if (f === 3) {
+            playSound('win');
+            const winMsgFormatted = langData[currentLang].winMsg.replace('{n}', attempts);
+            showEndModal(langData[currentLang].winTitle, winMsgFormatted, secret.join(''));
+            guessHistoryData = []; // 清空以便下一場
+        } else {
+            // 清空輸入槽並重新聚焦
+            currentGuess = [];
+            updateSlotsUI();
+            enableAllNumKeys();
         }
-
-        div.innerHTML = `<strong>#${attempts} : ${guess}</strong> <div class="tag-group">${tags}</div>`;
-        container.prepend(div);
     }
 
-    function showEnd(title, msg) {
-        document.getElementById('modal-title').innerText = title;
-        document.getElementById('modal-content').innerText = msg + secret.join('');
-        document.getElementById('modal').style.display = "block";
-        document.getElementById('overlay').style.display = "block";
+    // 渲染歷史紀錄 UI（支援動態雙語切換）
+    function refreshHistoryUI() {
+        const container = document.getElementById('history');
+        container.innerHTML = "";
+
+        guessHistoryData.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            
+            let tagsHtml = "";
+            if (item.f === 0 && item.p === 0) {
+                tagsHtml = `<span class="tag tag-b">🥯 Bagels</span>`;
+            } else {
+                for (let i = 0; i < item.f; i++) {
+                    tagsHtml += `<span class="tag tag-f">🎯 Fermi</span>`;
+                }
+                for (let i = 0; i < item.p; i++) {
+                    tagsHtml += `<span class="tag tag-p">💡 Pico</span>`;
+                }
+            }
+
+            div.innerHTML = `
+                <div class="history-num">#${item.attemptNum} : ${item.guessStr}</div>
+                <div class="tag-group">${tagsHtml}</div>
+            `;
+            container.appendChild(div);
+        });
     }
 
-    function giveUp() {
-        showEnd("Game Over", langData[currentLang].giveUpMsg);
+    // 放棄與看答案
+    function requestGiveUp() {
+        showConfirmModal('confirmGiveUpTitle', 'confirmGiveUpMsg', () => {
+            showEndModal(langData[currentLang].giveUpTitle, langData[currentLang].giveUpMsg, secret.join(''));
+            guessHistoryData = [];
+        });
     }
 
-    function confirmReset() {
-        if(confirm(langData[currentLang].confirmReset)) initGame();
+    // 重玩詢問
+    function requestReset() {
+        if (attempts === 0 && currentGuess.length === 0) {
+            initGame();
+            return;
+        }
+        showConfirmModal('confirmResetTitle', 'confirmResetMsg', () => {
+            guessHistoryData = [];
+            initGame();
+        });
     }
 
-    // Enter 鍵支援
-    document.getElementById('guessInput').addEventListener('keyup', (e) => {
-        if(e.key === 'Enter') makeGuess();
-    });
-
-    initGame();
-    setLang('zh');
+    // 初始化與首裝載
+    window.onload = () => {
+        initGame();
+        setLang('zh'); // 預設使用繁體中文，玩家可隨時點擊 EN 切換
+    };
 </script>
 
 </body>
