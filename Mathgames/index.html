@@ -443,7 +443,7 @@
 
 <div class="game-card">
     <!-- 自訂錯誤通知 -->
-    <div class="toast-container" id="toast">請輸入3個不重複的數字！</div>
+    <div class="toast-container" id="toast"></div>
 
     <!-- 頂部控制列 -->
     <div class="top-bar">
@@ -480,7 +480,7 @@
 
     <!-- 提交按鈕與控制 -->
     <button class="btn-guess" onclick="makeGuess()" id="ui-btn-guess" disabled style="width: 100%;">
-        🔍 提交猜測 (Guess)
+        🔍 提交猜測
     </button>
 
     <!-- 虛擬自製觸控鍵盤 -->
@@ -500,7 +500,7 @@
         </button>
     </div>
 
-    <!-- 歷史歷史紀錄 -->
+    <!-- 歷史猜測紀錄 -->
     <div class="history-container" id="history"></div>
 
     <!-- 底部操作列 -->
@@ -940,7 +940,14 @@
     // 初始化與首裝載
     window.onload = () => {
         initGame();
-        setLang('zh'); // 預設使用繁體中文，玩家可隨時點擊 EN 切換
+        
+        // 偵測瀏覽器預設語言，實現全球用戶自動中英文對應
+        const browserLang = navigator.language || navigator.userLanguage || 'zh';
+        if (browserLang.toLowerCase().startsWith('en')) {
+            setLang('en');
+        } else {
+            setLang('zh');
+        }
     };
 </script>
 
